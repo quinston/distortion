@@ -1,0 +1,10 @@
+#version 300 es
+
+precision mediump float;
+
+in vec3 Colour;
+out vec4 outColor;
+
+void main() {
+    outColor = vec4(Colour, 0.0f);
+}
