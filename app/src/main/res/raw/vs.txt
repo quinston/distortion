@@ -5,7 +5,9 @@ layout(location=1) in vec3 colour;
 
 out vec3 Colour;
 
+layout(location=0) uniform mat4 trans;
+
 void main() {
-    gl_Position = vec4(position, 0.0f, 1.0f);
+    gl_Position = trans * vec4(position, 0.0f, 1.0f);
     Colour = colour;
 }

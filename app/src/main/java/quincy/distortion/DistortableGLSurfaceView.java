@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
+import android.opengl.Matrix;
 import android.util.AttributeSet;
 import android.util.Log;
 
@@ -131,6 +132,20 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
             int colourHandle = GLES30.glGetAttribLocation(program, "colour");
             GLES30.glVertexAttribPointer(colourHandle, 3, GL_FLOAT, false, 5 * Float.BYTES, 2 * Float.BYTES);
             GLES30.glEnableVertexAttribArray(colourHandle);
+
+
+            float rotationArgument = ((float)(System.currentTimeMillis() % 1000)) / 1000 * 360;
+            Log.d("degree", "" + rotationArgument);
+            float[] rotationMatrix = new float[] {
+                    1,0,0,0,
+                    0,1,0,0,
+                    0,0,1,0,
+                    0,0,0,1
+            };
+            Matrix.rotateM(rotationMatrix, 0, rotationArgument, 1, 0.5f, 0.3f);
+
+            int transformHandle = GLES30.glGetUniformLocation(program, "trans");
+            GLES30.glUniformMatrix4fv(transformHandle, 1, false, rotationMatrix, 0);
 
             GLES30.glDrawElements(GLES30.GL_TRIANGLES, 6, GLES30.GL_UNSIGNED_SHORT, 0);
 

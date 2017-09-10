@@ -8,22 +8,23 @@
 
     <TextureView
         android:id="@+id/textureView"
-        android:layout_width="131dp"
-        android:layout_height="163dp"
-        android:layout_marginTop="44dp"
+        android:layout_width="154dp"
+        android:layout_height="249dp"
+        android:layout_marginTop="104dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginStart="68dp" />
+        android:layout_marginStart="16dp" />
 
     <quincy.distortion.DistortableGLSurfaceView
         android:id="@+id/distortableGLSurfaceView2"
-        android:layout_width="141dp"
-        android:layout_height="167dp"
-        android:layout_marginTop="256dp"
+        android:layout_width="160dp"
+        android:layout_height="406dp"
+        android:layout_marginTop="68dp"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginStart="172dp"
+        android:layout_marginStart="8dp"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginEnd="8dp" />
+        android:layout_marginEnd="8dp"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toEndOf="@+id/textureView" />
 
 </android.support.constraint.ConstraintLayout>
