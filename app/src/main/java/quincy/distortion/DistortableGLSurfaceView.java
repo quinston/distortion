@@ -84,26 +84,27 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
 
         @Override
         public void onDrawFrame(GL10 gl10) {
-            // x,y,r,g,b
-            float coords[] = {
-                    0f, 0f, 1.0f, 0f, 0f,
-                    0.5f, 0.5f, 0f, 1f, 0f,
-                    0f, 0.5f, 0f, 0f, 1f,
-                    -0.5f, 0f, 0f, 1f, 1f,
+            // x,y,r,g,b, tx, ty
+            float vertexCoords[] = {
+                    0f, 0f, 1.0f, 0f, 0f,    1, 1,
+                    0.5f, 0.5f, 0f, 1f, 0f,  1, 0,
+                    0f, 0.5f, 0f, 0f, 1f,     0, 1,
+                    -0.5f, 0f, 0f, 1f, 1f,   0, 0,
             };
+            final int entriesPerVertexCoord = 7;
 
-            ByteBuffer bb = ByteBuffer.allocateDirect(coords.length * Float.BYTES);
+            ByteBuffer bb = ByteBuffer.allocateDirect(vertexCoords.length * Float.BYTES);
             bb.order(ByteOrder.nativeOrder());
 
             FloatBuffer fb = bb.asFloatBuffer();
-            fb.put(coords);
+            fb.put(vertexCoords);
             fb.position(0);
 
 
             int vbo[] = {0};
             GLES30.glGenBuffers(1, vbo, 0);
             GLES30.glBindBuffer(GLES30.GL_ARRAY_BUFFER, vbo[0]);
-            GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, coords.length * Float.BYTES, fb, GL_STATIC_DRAW);
+            GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, vertexCoords.length * Float.BYTES, fb, GL_STATIC_DRAW);
 
 
             // draw a parallelogram of sorts
@@ -126,11 +127,11 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
 
 
             int positionHandle = GLES30.glGetAttribLocation(program, "position");
-            GLES30.glVertexAttribPointer(positionHandle, 2, GL_FLOAT, false, 5 * Float.BYTES, 0);
+            GLES30.glVertexAttribPointer(positionHandle, 2, GL_FLOAT, false, entriesPerVertexCoord * Float.BYTES, 0);
             GLES30.glEnableVertexAttribArray(positionHandle);
 
             int colourHandle = GLES30.glGetAttribLocation(program, "colour");
-            GLES30.glVertexAttribPointer(colourHandle, 3, GL_FLOAT, false, 5 * Float.BYTES, 2 * Float.BYTES);
+            GLES30.glVertexAttribPointer(colourHandle, 3, GL_FLOAT, false, entriesPerVertexCoord * Float.BYTES, 2 * Float.BYTES);
             GLES30.glEnableVertexAttribArray(colourHandle);
 
 
