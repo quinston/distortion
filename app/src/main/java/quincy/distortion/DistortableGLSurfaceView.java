@@ -63,8 +63,6 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
             GLES30.glAttachShader(program, vertexShader);
             GLES30.glAttachShader(program, fragmentShader);
 
-//            GLES30.glBindAttribLocation(program, 0, "position");
-//            GLES30.glBindAttribLocation(program, 1, "colour");
             GLES30.glLinkProgram(program);
 
             GLES30.glGetProgramiv(program, GLES30.GL_LINK_STATUS, status, 0);
@@ -131,7 +129,7 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
             GLES30.glEnableVertexAttribArray(positionHandle);
 
             int colourHandle = GLES30.glGetAttribLocation(program, "colour");
-            GLES30.glVertexAttribPointer(colourHandle, 3, GL_FLOAT, false, 5 * Float.BYTES, 2);
+            GLES30.glVertexAttribPointer(colourHandle, 3, GL_FLOAT, false, 5 * Float.BYTES, 2 * Float.BYTES);
             GLES30.glEnableVertexAttribArray(colourHandle);
 
             GLES30.glDrawElements(GLES30.GL_TRIANGLES, 6, GLES30.GL_UNSIGNED_SHORT, 0);
