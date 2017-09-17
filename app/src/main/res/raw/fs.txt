@@ -1,10 +1,45 @@
 #version 310 es
+#extension GL_OES_EGL_image_external : require
 
 precision mediump float;
 
 in vec3 Colour;
+in vec2 TextureCoords;
 out vec4 outColor;
 
+uniform samplerExternalOES cameraTex;
+uniform mat4 transformMatrix;
+
+float clip(float f) {
+    if (f == 0.0f) {
+        return f;
+    }
+    else if (f > 1.0f) {
+        return 1.0f;
+    }
+    else if (f < -1.0f) {
+        return -1.0f;
+    }
+    else {
+        return f;
+    }
+}
+
 void main() {
-    outColor = vec4(Colour, 0.0f);
+    vec2 physicalHomogeneousCoords = transformMatrix * vec4(TextureCoords.x, TextureCoords.y, 0, 1);
+
+     vec4 yulColour =  texture(cameraTex, vec2(physicalHomogeneousCoords.x, physicalHomogeneousCoords.y));
+
+/*
+    // convert yul to rgb (of course, with 0 to 1.0 instead of 0 to 255)
+    int c = int(yulColour.x) - 16;
+    int d = int(yulColour.y) - 128;
+    int e = int(yulColour.z) - 128;
+    float r = clip( float((298*c           + 409*e + 128) >> 8) );
+    float g = clip( float((298*c - 100 * d - 208*e + 128) >> 8) );
+    float b = clip( float((298*c + 516 * d         + 128) >> 8) );
+    */
+
+    //outColor = vec4(Colour, 1.0);
+    outColor = yulColour;
 }
