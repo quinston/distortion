@@ -21,6 +21,7 @@ import android.support.constraint.ConstraintLayout;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.util.Size;
+import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.TextureView;
 
@@ -38,6 +39,8 @@ import javax.microedition.khronos.opengles.GL10;
 import static android.hardware.camera2.CameraDevice.TEMPLATE_PREVIEW;
 import static android.opengl.GLES20.GL_STATIC_DRAW;
 import static android.opengl.GLES20.glGenBuffers;
+import static android.view.MotionEvent.ACTION_DOWN;
+import static android.view.MotionEvent.ACTION_UP;
 import static javax.microedition.khronos.opengles.GL10.GL_COLOR_BUFFER_BIT;
 import static javax.microedition.khronos.opengles.GL10.GL_FALSE;
 import static javax.microedition.khronos.opengles.GL10.GL_FLOAT;
@@ -53,6 +56,11 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
         private final Resources res;
         private final int cameraTextureUnit = 0;
         private SurfaceTexture st;
+        private boolean isOverlayEnabled = false;
+
+        public void setOverlayEnabled(boolean b) {
+            isOverlayEnabled = b;
+        }
 
 
         public MyRenderer(Resources _res) {
@@ -107,100 +115,93 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
 
             st = new SurfaceTexture(texture[0], false);
 
-            st.setOnFrameAvailableListener(new SurfaceTexture.OnFrameAvailableListener() {
-                @Override
-                public void onFrameAvailable(SurfaceTexture surfaceTexture) {
-                    Log.d("poop", "i got a frame");
-                }
-            });
+            CameraManager cm = getContext().getSystemService(CameraManager.class);
+            try {
+                String rearFacingCameraId = Utility.findRearFacingCameraId(cm);
 
-                CameraManager cm = getContext().getSystemService(CameraManager.class);
-                try {
-                    String rearFacingCameraId = Utility.findRearFacingCameraId(cm);
-
-                    List<Surface> outputSurfaces = new ArrayList<>();
+                List<Surface> outputSurfaces = new ArrayList<>();
 
 
-                    post(() -> {
-                        try {
-                            StreamConfigurationMap map = cm.getCameraCharacteristics(rearFacingCameraId).get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+                post(() -> {
+                    try {
+                        StreamConfigurationMap map = cm.getCameraCharacteristics(rearFacingCameraId).get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
 
 
-                            Size[] outputSizes = map.getOutputSizes(SurfaceTexture.class);
-                            Log.d("TextureView.SurfaceTextureListener", "Available camera sizes: " + Arrays.toString(outputSizes));
-                            Log.d("TextureView.SurfaceTextureListener", " Arbitrarily picking size 0: " + outputSizes[0]);
-                            st.setDefaultBufferSize(outputSizes[0].getWidth(),
-                                    outputSizes[0].getHeight());
+                        Size[] outputSizes = map.getOutputSizes(SurfaceTexture.class);
+                        Log.d("TextureView.SurfaceTextureListener", "Available camera sizes: " + Arrays.toString(outputSizes));
+                        Log.d("TextureView.SurfaceTextureListener", " Arbitrarily picking size 0: " + outputSizes[0]);
+                        st.setDefaultBufferSize(outputSizes[0].getWidth(),
+                                outputSizes[0].getHeight());
 
-                            Surface textureViewSurface = new Surface(st);
-                            outputSurfaces.add(textureViewSurface);
+                        Surface textureViewSurface = new Surface(st);
+                        outputSurfaces.add(textureViewSurface);
 
-                            cm.openCamera(rearFacingCameraId,
-                                    new CameraDevice.StateCallback() {
-                                        @Override
-                                        public void onOpened(@NonNull CameraDevice camera) {
-                                            Log.d("CameraDevice.Statecallback", "Called onOpened");
+                        cm.openCamera(rearFacingCameraId,
+                                new CameraDevice.StateCallback() {
+                                    @Override
+                                    public void onOpened(@NonNull CameraDevice camera) {
+                                        Log.d("CameraDevice.Statecallback", "Called onOpened");
 
-                                            try {
-                                                camera.createCaptureSession(outputSurfaces,
-                                                        new CameraCaptureSession.StateCallback() {
-                                                            @Override
-                                                            public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
-                                                                Log.d("CameraCaptureSession.StateCallback", "Called onConfigured");
+                                        try {
+                                            camera.createCaptureSession(outputSurfaces,
+                                                    new CameraCaptureSession.StateCallback() {
+                                                        @Override
+                                                        public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
+                                                            Log.d("CameraCaptureSession.StateCallback", "Called onConfigured");
 
-                                                                try {
-                                                                    CaptureRequest.Builder cb = camera.createCaptureRequest(TEMPLATE_PREVIEW);
-                                                                    cb.addTarget(outputSurfaces.get(0));
+                                                            try {
+                                                                CaptureRequest.Builder cb = camera.createCaptureRequest(TEMPLATE_PREVIEW);
+                                                                cb.addTarget(outputSurfaces.get(0));
 
-                                                                    cameraCaptureSession.setRepeatingRequest(cb.build(),
-                                                                            new CameraCaptureSession.CaptureCallback() {
-                                                                                @Override
-                                                                                public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
-                                                                                    super.onCaptureCompleted(session, request, result);
-                                                                                    Log.d("", "Got a frame!");
-                                                                                }
-                                                                            }, null);
-                                                                }
-                                                                catch (CameraAccessException e) {
-                                                                    Log.e("createCaptureSession", "Failed to make capture request.");
-                                                                }
+                                                                cameraCaptureSession.setRepeatingRequest(cb.build(),
+                                                                        new CameraCaptureSession.CaptureCallback() {
+                                                                            @Override
+                                                                            public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
+                                                                                super.onCaptureCompleted(session, request, result);
+                                                                                Log.d("", "Got a frame!");
+                                                                            }
+                                                                        }, null);
                                                             }
-
-                                                            @Override
-                                                            public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
-                                                                Log.e("createCaptureSession", "Failed to configure camera.");
+                                                            catch (CameraAccessException e) {
+                                                                Log.e("createCaptureSession", "Failed to make capture request.");
                                                             }
-                                                        },
-                                                        null);
-                                            }
-                                            catch (CameraAccessException e) {
-                                                Log.e("onSurfaceTextureAvailable", "Problem with camera connection: " + e);
-                                            }
-                                        }
+                                                        }
 
-                                        @Override
-                                        public void onDisconnected(@NonNull CameraDevice camera) {
-                                            Log.d("CameraDevice.Statecallback", "Called onDisconnected");
+                                                        @Override
+                                                        public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
+                                                            Log.e("createCaptureSession", "Failed to configure camera.");
+                                                        }
+                                                    },
+                                                    null);
                                         }
+                                        catch (CameraAccessException e) {
+                                            Log.e("onSurfaceTextureAvailable", "Problem with camera connection: " + e);
+                                        }
+                                    }
 
-                                        @Override
-                                        public void onError(@NonNull CameraDevice camera, int error) {
-                                            Log.d("CameraDevice.Statecallback", "Called onError: error=" + error);
-                                        }
-                                    },
-                                    null);
-                        }
-                        catch (CameraAccessException e) {
-                            Log.e("TextureView.SurfaceTextureListener onSurfaceTextureAvailable", "Couldn't get configuration map for camera.");
-                        }
-                        catch (SecurityException e) {
-                            Log.e("TextureView.SurfaceTextureListener onSurfaceTextureAvailable", "SecurityException: was not able to access camera.");
-                        }
-                    });
-                }
-                catch(CameraAccessException e){
-                    Log.e("CameraDisplay onCreate", "Failed to get a rear-facing camera ID.");
-                }
+                                    @Override
+                                    public void onDisconnected(@NonNull CameraDevice camera) {
+                                        Log.d("CameraDevice.Statecallback", "Called onDisconnected");
+                                    }
+
+                                    @Override
+                                    public void onError(@NonNull CameraDevice camera, int error) {
+                                        Log.d("CameraDevice.Statecallback", "Called onError: error=" + error);
+                                    }
+                                },
+                                null);
+                    }
+                    catch (CameraAccessException e) {
+                        Log.e("TextureView.SurfaceTextureListener onSurfaceTextureAvailable", "Couldn't get configuration map for camera.");
+                    }
+                    catch (SecurityException e) {
+                        Log.e("TextureView.SurfaceTextureListener onSurfaceTextureAvailable", "SecurityException: was not able to access camera.");
+                    }
+                });
+            }
+            catch(CameraAccessException e){
+                Log.e("CameraDisplay onCreate", "Failed to get a rear-facing camera ID.");
+            }
             /******************************************/
         }
 
@@ -213,7 +214,7 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
         public void onDrawFrame(GL10 gl10) {
             st.updateTexImage();
 
-            GLES30.glClearColor(0.5f, 0.5f, 0, 1.0f);
+            GLES30.glClearColor(0f, 0f, 0, 1.0f);
             GLES30.glClear(GL_COLOR_BUFFER_BIT);
 
             float[] transformMatrix = new float[16];
@@ -222,14 +223,14 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
             int transformMatrixHandle = GLES30.glGetAttribLocation(program, "textureTransformMatrix");
             GLES30.glUniformMatrix4fv(transformMatrixHandle, 1, false, transformMatrix, 0);
 
-            // x,y,r,g,b, tx, ty
+            // x,y, tx, ty
             float vertexCoords[] = {
-                    1f, 1f, 1.0f, 0f, 0f,    0,0,
-                    1f, -1f, 0f, 1f, 0f,     1,0,
-                    -1f, -1f, 0f, 0f, 1f,    1,1,
-                    -1f, 1f, 0f, 1f, 1f,     0,1,
+                    1f, 1f,     0,0,
+                    1f, -1f,     1,0,
+                    -1f, -1f,    1,1,
+                    -1f, 1f,    0,1,
             };
-            final int entriesPerVertexCoord = 7;
+            final int entriesPerVertexCoord = 4;
 
             /************************* load vertices into vbo */
             ByteBuffer bb = ByteBuffer.allocateDirect(vertexCoords.length * Float.BYTES);
@@ -270,24 +271,27 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
             GLES30.glVertexAttribPointer(positionHandle, 2, GL_FLOAT, false, entriesPerVertexCoord * Float.BYTES, 0);
             GLES30.glEnableVertexAttribArray(positionHandle);
 
-            int colourHandle = GLES30.glGetAttribLocation(program, "colour");
-            GLES30.glVertexAttribPointer(colourHandle, 3, GL_FLOAT, false, entriesPerVertexCoord * Float.BYTES, 2 * Float.BYTES);
-            GLES30.glEnableVertexAttribArray(colourHandle);
-
             int textureCoordsHandle = GLES30.glGetAttribLocation(program, "textureCoords");
-            GLES30.glVertexAttribPointer(textureCoordsHandle, 2, GL_FLOAT, false, entriesPerVertexCoord * Float.BYTES, 5 * Float.BYTES);
+            GLES30.glVertexAttribPointer(textureCoordsHandle, 2, GL_FLOAT, false, entriesPerVertexCoord * Float.BYTES, 2 * Float.BYTES);
             GLES30.glEnableVertexAttribArray(textureCoordsHandle);
             /***********************************************************/
 
             /************************* set some uniforms */
             int samplerHandle = GLES30.glGetUniformLocation(program, "cameraTex");
             GLES30.glUniform1i(samplerHandle, cameraTextureUnit);
+
+            int opacityHandle = GLES30.glGetUniformLocation(program, "opacity");
+            if (isOverlayEnabled) {
+                GLES30.glUniform1f(opacityHandle, 0.3f);
+            }
+            else {
+                GLES30.glUniform1f(opacityHandle, 1f);
+            }
             /******************************************/
 
             GLES30.glDrawElements(GLES30.GL_TRIANGLES, 6, GLES30.GL_UNSIGNED_SHORT, 0);
 
             GLES30.glDisableVertexAttribArray(positionHandle);
-            GLES30.glDisableVertexAttribArray(colourHandle);
             GLES30.glDisableVertexAttribArray(textureCoordsHandle);
 
         }
@@ -303,5 +307,22 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
         renderer = new MyRenderer(getResources());
         setRenderer(renderer);
         setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent e) {
+        float x = e.getX();
+        float y = e.getY();
+        switch (e.getAction()) {
+            case ACTION_DOWN:
+                Log.d("shit", "down");
+                renderer.setOverlayEnabled(true);
+                break;
+            case ACTION_UP:
+                Log.d("shit", "up");
+                renderer.setOverlayEnabled(false);
+                break;
+        }
+        return true;
     }
 }
