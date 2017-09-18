@@ -23,6 +23,9 @@ import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 import android.view.TextureView;
+import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 
 import org.w3c.dom.Text;
 
@@ -38,11 +41,15 @@ public class CameraDisplay extends AppCompatActivity implements ActivityCompat.O
 
     private final int CAMERA_PERMISSIONS_REQUEST_CODE = 0;
 
-    public static SurfaceTexture st;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+
+//        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
+
         setContentView(R.layout.activity_camera_display);
 
 
@@ -58,99 +65,11 @@ public class CameraDisplay extends AppCompatActivity implements ActivityCompat.O
 
             Log.d("CameraActivity", "Got camera permissions.");
 
-            CameraManager cm = getSystemService(CameraManager.class);
-
-            try {
-                String rearFacingCameraId = Utility.findRearFacingCameraId(cm);
-
-                List<Surface> outputSurfaces = new ArrayList<>();
-
-                try {
-                    // put it in texture 0 for now
-                    st = new SurfaceTexture(0, true);
-
-                    StreamConfigurationMap map = cm.getCameraCharacteristics(rearFacingCameraId).get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-
-
-                    Size[] outputSizes = map.getOutputSizes(SurfaceTexture.class);
-                    Log.d("TextureView.SurfaceTextureListener", "Available camera sizes: " + Arrays.toString(outputSizes));
-                    Log.d("TextureView.SurfaceTextureListener", " Arbitrarily picking size 0: " + outputSizes[0]);
-                    st.setDefaultBufferSize(outputSizes[0].getWidth(),
-                            outputSizes[0].getHeight());
-
-                    Surface textureViewSurface = new Surface(st);
-                    outputSurfaces.add(textureViewSurface);
-
-                    cm.openCamera(rearFacingCameraId,
-                            new CameraDevice.StateCallback() {
-                                @Override
-                                public void onOpened(@NonNull CameraDevice camera) {
-                                    Log.d("CameraDevice.Statecallback", "Called onOpened");
-
-                                    try {
-                                        camera.createCaptureSession(outputSurfaces,
-                                                new CameraCaptureSession.StateCallback() {
-                                                    @Override
-                                                    public void onConfigured(@NonNull CameraCaptureSession cameraCaptureSession) {
-                                                        Log.d("CameraCaptureSession.StateCallback", "Called onConfigured");
-
-                                                        try {
-                                                            CaptureRequest.Builder cb = camera.createCaptureRequest(TEMPLATE_PREVIEW);
-                                                            cb.addTarget(outputSurfaces.get(0));
-
-                                                            cameraCaptureSession.setRepeatingRequest(cb.build(),
-                                                                    new CameraCaptureSession.CaptureCallback() {
-                                                                        @Override
-                                                                        public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
-                                                                            super.onCaptureCompleted(session, request, result);
-                                                                            Log.d("", "Got a frame!");
-                                                                        }
-                                                                    }, null);
-                                                        }
-                                                        catch (CameraAccessException e) {
-                                                            Log.e("createCaptureSession", "Failed to make capture request.");
-                                                        }
-                                                    }
-
-                                                    @Override
-                                                    public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
-                                                        Log.e("createCaptureSession", "Failed to configure camera.");
-                                                    }
-                                                },
-                                                null);
-                                    }
-                                    catch (CameraAccessException e) {
-                                        Log.e("onSurfaceTextureAvailable", "Problem with camera connection: " + e);
-                                    }
-                                }
-
-                                @Override
-                                public void onDisconnected(@NonNull CameraDevice camera) {
-                                    Log.d("CameraDevice.Statecallback", "Called onDisconnected");
-                                }
-
-                                @Override
-                                public void onError(@NonNull CameraDevice camera, int error) {
-                                    Log.d("CameraDevice.Statecallback", "Called onError: error=" + error);
-                                }
-                            },
-                            null);
-
-                    ConstraintLayout cl = (ConstraintLayout) findViewById(R.id.rootLayout);
-                    DistortableGLSurfaceView glView = new DistortableGLSurfaceView(getApplicationContext());
-                    cl.addView(glView);
-                }
-                catch (CameraAccessException e) {
-                    Log.e("TextureView.SurfaceTextureListener onSurfaceTextureAvailable", "Couldn't get configuration map for camera.");
-                }
-                catch (SecurityException e) {
-                    Log.e("TextureView.SurfaceTextureListener onSurfaceTextureAvailable", "SecurityException: was not able to access camera.");
-                }
-
-            }
-            catch(CameraAccessException e){
-                Log.e("CameraDisplay onCreate", "Failed to get a rear-facing camera ID.");
-            }
+            ConstraintLayout cl = (ConstraintLayout) findViewById(R.id.rootLayout);
+            DistortableGLSurfaceView glView = new DistortableGLSurfaceView(getApplicationContext());
+            cl.addView(glView);
         }
     }
+
+
 }
