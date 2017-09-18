@@ -222,12 +222,12 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
             int transformMatrixHandle = GLES30.glGetAttribLocation(program, "textureTransformMatrix");
             GLES30.glUniformMatrix4fv(transformMatrixHandle, 1, false, transformMatrix, 0);
 
-            // x,y,r,g,b, tx, tyMyR
+            // x,y,r,g,b, tx, ty
             float vertexCoords[] = {
-                    1f, 0.9f, 1.0f, 0f, 0f,    1, 1,
-                    0.9f, -1f, 0f, 1f, 0f,  1, 0,
-                    -1f, -0.9f, 0f, 0f, 1f,    0, 0,
-                    -0.9f, 1f, 0f, 1f, 1f,   0, 1,
+                    1f, 0.9f, 1.0f, 0f, 0f,    0,1,
+                    0.9f, -1f, 0f, 1f, 0f, 1,1,
+                    -1f, -0.9f, 0f, 0f, 1f,     1,0,
+                    -0.9f, 1f, 0f, 1f, 1f,   0,0,
             };
             final int entriesPerVertexCoord = 7;
 
