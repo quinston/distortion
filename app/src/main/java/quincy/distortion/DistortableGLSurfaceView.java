@@ -224,10 +224,10 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
 
             // x,y,r,g,b, tx, ty
             float vertexCoords[] = {
-                    1f, 0.9f, 1.0f, 0f, 0f,    0,1,
-                    0.9f, -1f, 0f, 1f, 0f, 1,1,
-                    -1f, -0.9f, 0f, 0f, 1f,     1,0,
-                    -0.9f, 1f, 0f, 1f, 1f,   0,0,
+                    1f, 1f, 1.0f, 0f, 0f,    0,0,
+                    1f, -1f, 0f, 1f, 0f,     1,0,
+                    -1f, -1f, 0f, 0f, 1f,    1,1,
+                    -1f, 1f, 0f, 1f, 1f,     0,1,
             };
             final int entriesPerVertexCoord = 7;
 
@@ -280,19 +280,6 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
             /***********************************************************/
 
             /************************* set some uniforms */
-            float rotationArgument = ((float)(System.currentTimeMillis() % 5000)) / 5000 * 360;
-            Log.d("degree", "" + rotationArgument);
-            float[] rotationMatrix = new float[] {
-                    1,0,0,0,
-                    0,1,0,0,
-                    0,0,1,0,
-                    0,0,0,1
-            };
-            Matrix.rotateM(rotationMatrix, 0, rotationArgument, 0, 0.5f, 0.0f);
-
-            int transformHandle = GLES30.glGetUniformLocation(program, "vertexTransformMatrix");
-            GLES30.glUniformMatrix4fv(transformHandle, 1, false, rotationMatrix, 0);
-
             int samplerHandle = GLES30.glGetUniformLocation(program, "cameraTex");
             GLES30.glUniform1i(samplerHandle, cameraTextureUnit);
             /******************************************/
