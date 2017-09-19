@@ -3,6 +3,8 @@ package quincy.distortion;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Camera;
+import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -298,7 +300,7 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
     }
 
     private MyRenderer renderer;
-
+    private boolean showGrid = false;
 
     public DistortableGLSurfaceView(Context context) {
         super(context);
@@ -307,6 +309,10 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
         renderer = new MyRenderer(getResources());
         setRenderer(renderer);
         setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
+
+
+        // possible race condition?
+        setWillNotDraw(false);
     }
 
     @Override
@@ -315,14 +321,27 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
         float y = e.getY();
         switch (e.getAction()) {
             case ACTION_DOWN:
-                Log.d("shit", "down");
                 renderer.setOverlayEnabled(true);
+                showGrid = true;
+                invalidate();
                 break;
             case ACTION_UP:
-                Log.d("shit", "up");
                 renderer.setOverlayEnabled(false);
+                showGrid = false;
+                invalidate();
                 break;
         }
         return true;
+    }
+
+    @Override
+    public void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+
+        if (showGrid) {
+            Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+            paint.setColor((255 << 24) | (255 << 16) | (255));
+            canvas.drawRect(20, 20, 100, 200, paint);
+        }
     }
 }

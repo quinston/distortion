@@ -24,8 +24,10 @@ import android.util.Size;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.RelativeLayout;
 
 import org.w3c.dom.Text;
 
@@ -66,10 +68,10 @@ public class CameraDisplay extends AppCompatActivity implements ActivityCompat.O
 
             Log.d("CameraActivity", "Got camera permissions.");
 
-            ConstraintLayout cl = (ConstraintLayout) findViewById(R.id.rootLayout);
+            RelativeLayout cl = (RelativeLayout) findViewById(R.id.rootLayout);
             glView = new DistortableGLSurfaceView(getApplicationContext());
-//           set width and height stuff
-            cl.addView(glView);
+            RelativeLayout.LayoutParams lp = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            cl.addView(glView, lp);
         }
     }
 
