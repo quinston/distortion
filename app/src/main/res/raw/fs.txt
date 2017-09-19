@@ -24,5 +24,5 @@ float clip(float f) {
 
 void main() {
     vec4 physicalHomogeneousCoords =  vec4(TextureCoords.x, TextureCoords.y, 0, 1);
-    outColor = vec4(opacity, opacity, opacity, 1.0) * texture(cameraTex, physicalHomogeneousCoords.xy);
+    outColor = vec4(vec3(1.0, 1.0, 1.0) * opacity, 1.0) * texture(cameraTex, physicalHomogeneousCoords.xy);
 }

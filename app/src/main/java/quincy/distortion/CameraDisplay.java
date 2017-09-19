@@ -40,6 +40,7 @@ import static android.hardware.camera2.CameraDevice.TEMPLATE_PREVIEW;
 public class CameraDisplay extends AppCompatActivity implements ActivityCompat.OnRequestPermissionsResultCallback {
 
     private final int CAMERA_PERMISSIONS_REQUEST_CODE = 0;
+    private DistortableGLSurfaceView glView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,10 +67,25 @@ public class CameraDisplay extends AppCompatActivity implements ActivityCompat.O
             Log.d("CameraActivity", "Got camera permissions.");
 
             ConstraintLayout cl = (ConstraintLayout) findViewById(R.id.rootLayout);
-            DistortableGLSurfaceView glView = new DistortableGLSurfaceView(getApplicationContext());
+            glView = new DistortableGLSurfaceView(getApplicationContext());
+//           set width and height stuff
             cl.addView(glView);
         }
     }
 
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (glView != null) {
+            glView.onPause();
+        }
+    }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (glView != null) {
+            glView.onResume();
+        }
+    }
 }
