@@ -2,7 +2,6 @@ package quincy.distortion;
 
 import android.content.Context;
 import android.content.res.Resources;
-import android.graphics.Camera;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -18,15 +17,11 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
-import android.opengl.Matrix;
 import android.support.annotation.NonNull;
-import android.support.constraint.ConstraintLayout;
-import android.util.AttributeSet;
 import android.util.Log;
 import android.util.Size;
 import android.view.MotionEvent;
 import android.view.Surface;
-import android.view.TextureView;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -43,9 +38,9 @@ import static android.hardware.camera2.CameraDevice.TEMPLATE_PREVIEW;
 import static android.opengl.GLES20.GL_STATIC_DRAW;
 import static android.opengl.GLES20.glGenBuffers;
 import static android.view.MotionEvent.ACTION_DOWN;
+import static android.view.MotionEvent.ACTION_MOVE;
 import static android.view.MotionEvent.ACTION_UP;
 import static javax.microedition.khronos.opengles.GL10.GL_COLOR_BUFFER_BIT;
-import static javax.microedition.khronos.opengles.GL10.GL_FALSE;
 import static javax.microedition.khronos.opengles.GL10.GL_FLOAT;
 
 /**
@@ -303,6 +298,12 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
     private MyRenderer renderer;
     private boolean showGrid = false;
 
+    private final long gridUpdatePeriodMillis = 40;
+    private final int noVerticesPerRow = 10;
+    private final int noVerticesPerCol = 18;
+    // x,y,tx,ty
+    private final int noEntriesPerVertex = 4;
+
     public DistortableGLSurfaceView(Context context) {
         super(context);
         setEGLContextClientVersion(3);
@@ -311,36 +312,121 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
         setRenderer(renderer);
         setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
 
-
         // possible race condition?
         setWillNotDraw(false);
+
+        glVertices = new float[noEntriesPerVertex * noVerticesPerCol * noVerticesPerRow];
+        final float inColumnStepSize = 2f / (noVerticesPerCol - 1);
+        final float inRowStepSize = 2f / (noVerticesPerRow - 1);
+
+        for (int i = 0; i < noVerticesPerCol; ++i) {
+            for (int j = 0; j < noVerticesPerRow; ++j) {
+                // x, tx
+                glVertices[(i * noVerticesPerRow + j) * noEntriesPerVertex + 0] = (-1) + j * inRowStepSize;
+                // y
+                glVertices[(i * noVerticesPerRow + j) * noEntriesPerVertex + 1] = (-1) + i * inColumnStepSize;
+                // tx
+                glVertices[(i * noVerticesPerRow + j) * noEntriesPerVertex + 2] = (-1) + j * inRowStepSize;
+                // ty
+                glVertices[(i * noVerticesPerRow + j) * noEntriesPerVertex + 3] = (-1) + i * inColumnStepSize;
+            }
+        }
+
+
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                // Do not move the points at all if there is no motion
+                if (dragX != touchDownX || dragY != touchDownY) {
+                    final float dx = dragX - touchDownX;
+                    final float dy = dragY - touchDownY;
+
+                    for (int i = 0; i < glVertices.length/noEntriesPerVertex; ++i) {
+                        // Do not move at all if this is an edge vertex
+                        if (Math.abs(glVertices[noEntriesPerVertex * i]) == 1
+                                || Math.abs(glVertices[noEntriesPerVertex * i + 1]) == 1) {
+                            continue;
+                        }
+
+                    /* Compute the new location of the vertex */
+                        // Tuning parameters
+                        final float ex = 1f;
+                        final float ey = 1f;
+
+                        final float x0 =  glVertices[noEntriesPerVertex*i];
+                        final float y0 =  glVertices[noEntriesPerVertex*i+1];
+                        final double distanceFromSourceTerm = Math.exp(-(Math.pow(touchDownX/getWidth() - x0, 2)
+                                + Math.pow(touchDownY/getHeight() - y0, 2)));
+
+                        float x1 = (float)
+                                (x0 + dx / getWidth()
+                                        * Math.pow(1 - Math.abs(x0), ex)
+                                        * distanceFromSourceTerm);
+                        float y1 = (float)
+                                (y0 + dy / getHeight()
+                                        * Math.pow(1 - Math.abs(y0), ey)
+                                        * distanceFromSourceTerm);
+//                        float x1 = x0 +dx/getWidth();
+//                        float y1 = y0 + dy/getHeight();
+
+//                        Log.d("hey", "old pt new pt " + x0 + " " + y0 + " " + x1 + " " + y1 + " ");
+                        /*******************************************************************/
+
+
+                        // Translate back to GL coordinates
+                        glVertices[noEntriesPerVertex*i] = x1;
+                        glVertices[noEntriesPerVertex*i+1] = y1;
+                    }
+
+                    // Having processed the motion event, reset the touchdown point
+                    // (we don't want momentum)
+                    touchDownX = dragX;
+                    touchDownY = dragY;
+
+                    invalidate();
+                }
+                postDelayed(this, gridUpdatePeriodMillis);
+            }
+        };
+        r.run();
+
     }
+
+    // Update these in onTouchEvent, then asynchronously update the point locations
+    // in a periodic function
+    private float touchDownX = 0;
+    private float touchDownY = 0;
+    private float dragX = 0;
+    private float dragY = 0;
 
     @Override
     public boolean onTouchEvent(MotionEvent e) {
-        float x = e.getX();
-        float y = e.getY();
         switch (e.getAction()) {
             case ACTION_DOWN:
                 renderer.setOverlayEnabled(true);
                 showGrid = true;
+
+                touchDownX = dragX = e.getX();
+                touchDownY = dragY = e.getY();
+
                 invalidate();
                 break;
             case ACTION_UP:
                 renderer.setOverlayEnabled(false);
                 showGrid = false;
+
                 invalidate();
+                break;
+            case ACTION_MOVE:
+                dragX = e.getX();
+                dragY = e.getY();
                 break;
         }
         return true;
     }
 
-    private float[] vertices = new float[] {
-            1, 1,
-            1, -1,
-            0, 0,
-            0.3f, 0.3f,
-    };
+    private float[] glVertices;
+
 
     @Override
     public void onDraw(Canvas canvas) {
@@ -348,56 +434,21 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
 
         if (showGrid) {
             Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-            paint.setColor(Color.WHITE);
+            paint.setColor((100 << 24) | (255 << 16) | (255 << 8) | 255);
 
             //configure me
-            final int radius = 15;
-
-            final int viewCentreX = getWidth()/2;
-            final int viewCentreY = getHeight()/2;
-            Log.d("DistortableGLSurfaceView onDraw", "Centre is " + viewCentreX + "," + viewCentreY);
+            final int radius = 10;
 
 
-            for (int i = 0; i < vertices.length / 2; ++i) {
+            for (int i = 0; i < glVertices.length / noEntriesPerVertex; ++i) {
                 // Move from GL coordinates to screen coordinates
-                float circleCentreX = viewCentreX * (1 + vertices[2*i]);
-                float circleCentreY = viewCentreY * (1 + vertices[2*i+1]);
+                float circleCentreX = getWidth() / 2 * (1 + glVertices[noEntriesPerVertex * i]);
+                float circleCentreY = getHeight() / 2 * (1 + glVertices[noEntriesPerVertex * i + 1]);
 
                 canvas.drawOval(circleCentreX - radius, circleCentreY - radius,
                         circleCentreX + radius, circleCentreY + radius,
                         paint);
             }
         }
-    }
-
-    /**
-     *
-     * @param x0 Original vertex location
-     * @param y0
-     * @param touchX Where the finger was pressed down on the screen (in MotionEvent coordinates). Vertices
-     *               will be affected based on how close they are to (touchX, touchY).
-     * @param touchY
-     * @param dx Where the finger has been dragged after pressing down. This
-     *           determines the strength of the dragging effect on the vertices.
-     * @param dy
-     * @param ret A float array of size 2 in which to put the location of the vertex's new (x,y)
-     */
-    public static void computeVertexNewLocation(float x0, float y0, float touchX, float touchY, float dx, float dy, float[] ret) {
-        // Tuning parameters
-        final float ex = 3;
-        final float ey = 1.1f;
-        final float eDecay = -1;
-
-        float x1 = (float)
-                (x0 + dx * Math.pow(1 - Math.abs(x0), ex)
-                * Math.pow(1 - Math.abs(y0), ey)
-                * Math.pow(Math.pow(touchX - x0, 2) + Math.pow(touchY - y0, 2), eDecay));
-        float y1 = (float)
-                (y0 + dy * Math.pow(1 - Math.abs(x0), ex)
-                        * Math.pow(1 - Math.abs(y0), ey)
-                        * Math.pow(Math.pow(touchY - y0, 2) + Math.pow(touchY - y0, 2), eDecay));
-
-        ret[0] = x1;
-        ret[1] = y1;
     }
 }
