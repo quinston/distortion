@@ -49,10 +49,6 @@ public class CameraDisplay extends AppCompatActivity implements ActivityCompat.O
         super.onCreate(savedInstanceState);
 
 
-//        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        getWindow().getDecorView().setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
-
         setContentView(R.layout.activity_camera_display);
 
 
@@ -88,6 +84,14 @@ public class CameraDisplay extends AppCompatActivity implements ActivityCompat.O
         super.onResume();
         if (glView != null) {
             glView.onResume();
+        }
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        if (hasFocus) {
+            getWindow().getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION);
         }
     }
 }
