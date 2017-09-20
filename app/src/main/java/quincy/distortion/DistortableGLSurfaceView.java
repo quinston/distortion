@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Camera;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
@@ -334,14 +335,69 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
         return true;
     }
 
+    private float[] vertices = new float[] {
+            1, 1,
+            1, -1,
+            0, 0,
+            0.3f, 0.3f,
+    };
+
     @Override
     public void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
         if (showGrid) {
             Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-            paint.setColor((255 << 24) | (255 << 16) | (255));
-            canvas.drawRect(20, 20, 100, 200, paint);
+            paint.setColor(Color.WHITE);
+
+            //configure me
+            final int radius = 15;
+
+            final int viewCentreX = getWidth()/2;
+            final int viewCentreY = getHeight()/2;
+            Log.d("DistortableGLSurfaceView onDraw", "Centre is " + viewCentreX + "," + viewCentreY);
+
+
+            for (int i = 0; i < vertices.length / 2; ++i) {
+                // Move from GL coordinates to screen coordinates
+                float circleCentreX = viewCentreX * (1 + vertices[2*i]);
+                float circleCentreY = viewCentreY * (1 + vertices[2*i+1]);
+
+                canvas.drawOval(circleCentreX - radius, circleCentreY - radius,
+                        circleCentreX + radius, circleCentreY + radius,
+                        paint);
+            }
         }
+    }
+
+    /**
+     *
+     * @param x0 Original vertex location
+     * @param y0
+     * @param touchX Where the finger was pressed down on the screen (in MotionEvent coordinates). Vertices
+     *               will be affected based on how close they are to (touchX, touchY).
+     * @param touchY
+     * @param dx Where the finger has been dragged after pressing down. This
+     *           determines the strength of the dragging effect on the vertices.
+     * @param dy
+     * @param ret A float array of size 2 in which to put the location of the vertex's new (x,y)
+     */
+    public static void computeVertexNewLocation(float x0, float y0, float touchX, float touchY, float dx, float dy, float[] ret) {
+        // Tuning parameters
+        final float ex = 3;
+        final float ey = 1.1f;
+        final float eDecay = -1;
+
+        float x1 = (float)
+                (x0 + dx * Math.pow(1 - Math.abs(x0), ex)
+                * Math.pow(1 - Math.abs(y0), ey)
+                * Math.pow(Math.pow(touchX - x0, 2) + Math.pow(touchY - y0, 2), eDecay));
+        float y1 = (float)
+                (y0 + dy * Math.pow(1 - Math.abs(x0), ex)
+                        * Math.pow(1 - Math.abs(y0), ey)
+                        * Math.pow(Math.pow(touchY - y0, 2) + Math.pow(touchY - y0, 2), eDecay));
+
+        ret[0] = x1;
+        ret[1] = y1;
     }
 }
