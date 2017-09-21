@@ -27,5 +27,25 @@ final class Utility {
         InputStream is = res.openRawResource(id);
         return new BufferedReader(new InputStreamReader(is)).lines().collect(Collectors.joining("\n"));
     }
+
+    public static float cheapExp(float x) {
+        float t = (1 + x/16);
+        t *= t;
+        t *= t;
+        t *= t;
+        return t*t;
+    }
+
+    public static float cheapLogOneMinusX(float x) {
+        return -x-x*x/2-x*x*x/3;
+    }
+
+    public static float cheapLog(float x) {
+        return cheapLogOneMinusX(-1-x);
+    }
+
+    public static float cheapPow(float base, float expt) {
+        return cheapExp(expt * cheapLog(base));
+    }
 }
 

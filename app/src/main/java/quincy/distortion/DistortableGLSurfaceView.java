@@ -299,8 +299,8 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
     private boolean showGrid = false;
 
     private final long gridUpdatePeriodMillis = 40;
-    private final int noVerticesPerRow = 10;
-    private final int noVerticesPerCol = 18;
+    private final int noVerticesPerRow = 14;
+    private final int noVerticesPerCol = 22;
     // x,y,tx,ty
     private final int noEntriesPerVertex = 4;
 
@@ -350,26 +350,28 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
 
                     /* Compute the new location of the vertex */
                         // Tuning parameters
-                        final float ex = 1f;
-                        final float ey = 1f;
+                        final float ex = 5f;
+                        final float ey = 5f;
 
                         final float x0 =  glVertices[noEntriesPerVertex*i];
                         final float y0 =  glVertices[noEntriesPerVertex*i+1];
-                        final double distanceFromSourceTerm = Math.exp(-(Math.pow(touchDownX/getWidth() - x0, 2)
-                                + Math.pow(touchDownY/getHeight() - y0, 2)));
+
+                        final float xDistance = touchDownX/getWidth() - x0;
+                        final float yDistance = touchDownY/getHeight() - y0;
+                        float distanceFromSourceTerm =
+                                Utility.cheapExp(-(xDistance * xDistance + yDistance * yDistance)/2);
 
                         float x1 = (float)
                                 (x0 + dx / getWidth()
-                                        * Math.pow(1 - Math.abs(x0), ex)
-                                        * distanceFromSourceTerm);
+                                        * (1 - Math.abs(x0))
+                                        * distanceFromSourceTerm
+                        );
                         float y1 = (float)
                                 (y0 + dy / getHeight()
-                                        * Math.pow(1 - Math.abs(y0), ey)
-                                        * distanceFromSourceTerm);
-//                        float x1 = x0 +dx/getWidth();
-//                        float y1 = y0 + dy/getHeight();
+                                        * (1 - Math.abs(y0))
+                                        * distanceFromSourceTerm
+                                );
 
-//                        Log.d("hey", "old pt new pt " + x0 + " " + y0 + " " + x1 + " " + y1 + " ");
                         /*******************************************************************/
 
 
