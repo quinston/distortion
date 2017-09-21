@@ -219,12 +219,6 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
             GLES30.glClearColor(0f, 0f, 0, 1.0f);
             GLES30.glClear(GL_COLOR_BUFFER_BIT);
 
-            float[] transformMatrix = new float[16];
-            st.getTransformMatrix(transformMatrix);
-
-            int transformMatrixHandle = GLES30.glGetAttribLocation(program, "textureTransformMatrix");
-            GLES30.glUniformMatrix4fv(transformMatrixHandle, 1, false, transformMatrix, 0);
-
             // x,y, tx, ty
             float vertexCoords[] = vertices;
             final int entriesPerVertexCoord = 4;
