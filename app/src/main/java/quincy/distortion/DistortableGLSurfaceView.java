@@ -294,7 +294,7 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
     private boolean showGrid = false;
 
     private final long gridUpdatePeriodMillis = 40;
-    private final short noVerticesPerRow = 14;
+    private final short noVerticesPerRow = 18;
     private final short noVerticesPerCol = 22;
     // x,y,tx,ty
     private final int noEntriesPerVertex = 4;
