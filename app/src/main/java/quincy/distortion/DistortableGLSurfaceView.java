@@ -282,7 +282,7 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
             }
             /******************************************/
 
-            GLES30.glDrawElements(GLES30.GL_TRIANGLES, 6, GLES30.GL_UNSIGNED_SHORT, 0);
+            GLES30.glDrawElements(GLES30.GL_TRIANGLES, drawOrder.length, GLES30.GL_UNSIGNED_SHORT, 0);
 
             GLES30.glDisableVertexAttribArray(positionHandle);
             GLES30.glDisableVertexAttribArray(textureCoordsHandle);
@@ -294,8 +294,8 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
     private boolean showGrid = false;
 
     private final long gridUpdatePeriodMillis = 40;
-    private final short noVerticesPerRow = 2; // was14
-    private final short noVerticesPerCol = 2; // was 22
+    private final short noVerticesPerRow = 4; // was14
+    private final short noVerticesPerCol = 3; // was 22
     // x,y,tx,ty
     private final int noEntriesPerVertex = 4;
 
@@ -318,6 +318,9 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
                 glVertices[(i * noVerticesPerRow + j) * noEntriesPerVertex + 3] = 1-j * inRowStepSize /2;
             }
         }
+
+//        Log.d("vertices", Arrays.toString(glVertices));
+//        Log.d("draw order", Arrays.toString(Utility.generateDrawOrder(noVerticesPerRow, noVerticesPerCol)));
 
 
         Runnable r = new Runnable() {
@@ -353,8 +356,10 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
                                         * (1 - Math.abs(x0))
                                         * distanceFromSourceTerm
                         );
+                        // have to negate dy since Y is in the opposite direction for GL
+                        // coordinates versus screen coordinates
                         float y1 = (float)
-                                (y0 + dy / getHeight()
+                                (y0 - dy / getHeight()
                                         * (1 - Math.abs(y0))
                                         * distanceFromSourceTerm
                                 );
@@ -441,7 +446,9 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
             for (int i = 0; i < glVertices.length / noEntriesPerVertex; ++i) {
                 // Move from GL coordinates to screen coordinates
                 float circleCentreX = getWidth() / 2 * (1 + glVertices[noEntriesPerVertex * i]);
-                float circleCentreY = getHeight() / 2 * (1 + glVertices[noEntriesPerVertex * i + 1]);
+                // have to negate since GL y-direction and screen y-direciton
+                // are opposite
+                float circleCentreY = getHeight() / 2 * (1 - glVertices[noEntriesPerVertex * i + 1]);
 
                 canvas.drawOval(circleCentreX - radius, circleCentreY - radius,
                         circleCentreX + radius, circleCentreY + radius,

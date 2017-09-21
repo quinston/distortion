@@ -73,36 +73,32 @@ public class UtilityTest {
 
     @Test
     public void generateDrawOrder_correctness() throws Exception {
-        assert(Arrays.equals(
-                Utility.generateDrawOrder((short)2, (short) 2),
+        short noVerticesPerRow = 2;
+        short noVerticesPerCol = 2;
+        assertArrayEquals(
+                Utility.generateDrawOrder(noVerticesPerRow, noVerticesPerCol),
                 new short[] {
                         0,2,1,
                         1,2,3
                 }
-        ));
+        );
 
-        assert(Arrays.equals(
-                Utility.generateDrawOrder((short) 2, (short) 3),
+        noVerticesPerRow = 2;
+        noVerticesPerCol = 3;
+        assertArrayEquals(
+                Utility.generateDrawOrder(noVerticesPerRow, noVerticesPerCol),
                 new short[] {
                         0,2,1,
                         1,2,3,
-                        1,4,2,
-                        2,4,5
+                        2,4,3,
+                        3,4,5
                 }
-        ));
+        );
 
-        assert(Arrays.equals(
-                Utility.generateDrawOrder((short) 2, (short) 3),
-                new short[] {
-                        0,2,1,
-                        1,2,3,
-                        1,4,2,
-                        2,4,5
-                }
-        ));
-
-        assert(Arrays.equals(
-                Utility.generateDrawOrder((short) 3, (short) 3),
+        noVerticesPerRow = 3;
+        noVerticesPerCol = 3;
+        assertArrayEquals(
+                Utility.generateDrawOrder(noVerticesPerRow, noVerticesPerCol),
                 new short[] {
                         0,3,1,
                         1,3,4,
@@ -113,6 +109,27 @@ public class UtilityTest {
                         4,7,5,
                         5,7,8
                 }
-        ));
+        );
+
+
+        noVerticesPerRow = 4;
+        noVerticesPerCol = 3;
+        assertArrayEquals(
+                Utility.generateDrawOrder(noVerticesPerRow, noVerticesPerCol),
+                new short[] {
+                        0,4,1,
+                        1,4,5,
+                        1,5,2,
+                        2,5,6,
+                        2,6,3,
+                        3,6,7,
+                        4,8,5,
+                        5,8,9,
+                        5,9,6,
+                        6,9,10,
+                        6,10,7,
+                        7,10,11,
+                }
+        );
     }
 }
