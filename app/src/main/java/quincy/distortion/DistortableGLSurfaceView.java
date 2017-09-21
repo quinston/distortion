@@ -294,8 +294,8 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
     private boolean showGrid = false;
 
     private final long gridUpdatePeriodMillis = 40;
-    private final short noVerticesPerRow = 4; // was14
-    private final short noVerticesPerCol = 3; // was 22
+    private final short noVerticesPerRow = 14;
+    private final short noVerticesPerCol = 22;
     // x,y,tx,ty
     private final int noEntriesPerVertex = 4;
 
@@ -340,16 +340,15 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
 
                     /* Compute the new location of the vertex */
                         // Tuning parameters
-                        final float ex = 5f;
-                        final float ey = 5f;
+                        final float distanceDecay = 1;
 
                         final float x0 =  glVertices[noEntriesPerVertex*i];
                         final float y0 =  glVertices[noEntriesPerVertex*i+1];
 
-                        final float xDistance = touchDownX/getWidth() - x0;
-                        final float yDistance = touchDownY/getHeight() - y0;
+                        final float xDistanceToTouch = (touchDownX/getWidth() * 2 -1) - x0;
+                        final float yDistanceToTouch = (1 - touchDownY/getHeight() * 2) - y0;
                         float distanceFromSourceTerm =
-                                Utility.cheapExp(-(xDistance * xDistance + yDistance * yDistance)/2);
+                                1f/ (1 + distanceDecay * (xDistanceToTouch * xDistanceToTouch + yDistanceToTouch * yDistanceToTouch));
 
                         float x1 = (float)
                                 (x0 + dx / getWidth()
@@ -409,8 +408,8 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
                 renderer.setOverlayEnabled(true);
                 showGrid = true;
 
-                touchDownX = dragX = e.getX();
-                touchDownY = dragY = e.getY();
+                touchDownX = dragX = e.getRawX();
+                touchDownY = dragY = e.getRawY();
 
                 invalidate();
                 break;
@@ -421,8 +420,8 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
                 invalidate();
                 break;
             case ACTION_MOVE:
-                dragX = e.getX();
-                dragY = e.getY();
+                dragX = e.getRawX();
+                dragY = e.getRawY();
                 break;
         }
         return true;
