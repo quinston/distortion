@@ -47,5 +47,29 @@ final class Utility {
     public static float cheapPow(float base, float expt) {
         return cheapExp(expt * cheapLog(base));
     }
+
+    /**
+     * Generate the draw order for front-facing
+     * triangles that make up a  grid  of squares with the given
+     * numbers of vertices per row and column.
+     * The vertices are assumed to be numbered starting at 0 in row-major order.
+     * @param noVerticesPerRow
+     * @param noVerticesPerCol
+     * @return
+     */
+    public static short[] generateDrawOrder(short noVerticesPerRow, short noVerticesPerCol) {
+        short[] ret = new short[3 * 2 * (noVerticesPerRow-1) * (noVerticesPerCol-1)];
+        for (short r = 0; r < noVerticesPerRow - 1; ++r) {
+            for (short c = 0; c < noVerticesPerCol - 1; ++c) {
+                ret[6 * (r * (noVerticesPerRow-1) + c) + 0] = (short)( r * (noVerticesPerRow-1) + c);
+                ret[6 * (r * (noVerticesPerRow-1) + c) + 1] = (short)(r * (noVerticesPerRow-1) + c + 1);
+                ret[6 * (r * (noVerticesPerRow-1) + c) + 2] = (short)(r * (noVerticesPerRow-1) + c + noVerticesPerRow);
+                ret[6 * (r * (noVerticesPerRow-1) + c) + 3] = (short)(r * (noVerticesPerRow-1) + c + 1);
+                ret[6 * (r * (noVerticesPerRow-1) + c) + 4] = (short)(r * (noVerticesPerRow-1) + c + noVerticesPerRow);
+                ret[6 * (r * (noVerticesPerRow-1) + c) + 5] = (short)(r * (noVerticesPerRow-1) + c + 1 + noVerticesPerRow);
+            }
+        }
+        return ret;
+    }
 }
 

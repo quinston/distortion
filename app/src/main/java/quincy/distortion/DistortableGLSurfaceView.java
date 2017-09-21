@@ -51,18 +51,22 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
     private class MyRenderer implements GLSurfaceView.Renderer {
 
         private int program;
-        private final Resources res;
         private final int cameraTextureUnit = 0;
         private SurfaceTexture st;
         private boolean isOverlayEnabled = false;
+
+        private float[] vertices;
+        private short[] drawOrder;
 
         public void setOverlayEnabled(boolean b) {
             isOverlayEnabled = b;
         }
 
 
-        public MyRenderer(Resources _res) {
-            res = _res;
+        public MyRenderer(float[] _vertices,
+                          short[] _drawOrder) {
+            vertices = _vertices;
+            drawOrder = _drawOrder;
         }
 
         private int loadShader(int type, String shaderCode) {
@@ -74,7 +78,7 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
 
         @Override
         public void onSurfaceCreated(GL10 gl10, EGLConfig eglConfig) {
-            String vsCode = Utility.rawResourceToString(res, R.raw.vs);
+            String vsCode = Utility.rawResourceToString(DistortableGLSurfaceView.this.getResources(), R.raw.vs);
             int vertexShader = loadShader(GLES30.GL_VERTEX_SHADER, vsCode);
 
             Log.d("MyRenderer vs", GLES30.glGetShaderInfoLog(vertexShader));
@@ -82,7 +86,7 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
             GLES30.glGetShaderiv(vertexShader, GLES30.GL_COMPILE_STATUS, status, 0);
             Log.d("MyRenderer vs", "compile succeeded? " + status[0]);
 
-            String fsCode = Utility.rawResourceToString(res, R.raw.fs);
+            String fsCode = Utility.rawResourceToString(DistortableGLSurfaceView.this.getResources(), R.raw.fs);
             int fragmentShader = loadShader(GLES30.GL_FRAGMENT_SHADER, fsCode);
 
             GLES30.glGetShaderiv(fragmentShader, GLES30.GL_COMPILE_STATUS, status, 0);
@@ -222,12 +226,7 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
             GLES30.glUniformMatrix4fv(transformMatrixHandle, 1, false, transformMatrix, 0);
 
             // x,y, tx, ty
-            float vertexCoords[] = {
-                    1f, 1f,     0,0,
-                    1f, -1f,     1,0,
-                    -1f, -1f,    1,1,
-                    -1f, 1f,    0,1,
-            };
+            float vertexCoords[] = vertices;
             final int entriesPerVertexCoord = 4;
 
             /************************* load vertices into vbo */
@@ -245,11 +244,7 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
             GLES30.glBufferData(GLES30.GL_ARRAY_BUFFER, vertexCoords.length * Float.BYTES, fb, GL_STATIC_DRAW);
             /**************************************************************/
 
-            /********************** draw a parallelogram */
-            short drawOrder[] = {
-                    0,1,2,
-                    2,0,3,
-            };
+            /********************** draw a grid of squares */
 
             ByteBuffer drawlistb = ByteBuffer.allocateDirect(drawOrder.length * Short.BYTES);
             drawlistb.order(ByteOrder.nativeOrder());
@@ -299,21 +294,13 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
     private boolean showGrid = false;
 
     private final long gridUpdatePeriodMillis = 40;
-    private final int noVerticesPerRow = 14;
-    private final int noVerticesPerCol = 22;
+    private final short noVerticesPerRow = 2; // was14
+    private final short noVerticesPerCol = 2; // was 22
     // x,y,tx,ty
     private final int noEntriesPerVertex = 4;
 
     public DistortableGLSurfaceView(Context context) {
         super(context);
-        setEGLContextClientVersion(3);
-
-        renderer = new MyRenderer(getResources());
-        setRenderer(renderer);
-        setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
-
-        // possible race condition?
-        setWillNotDraw(false);
 
         glVertices = new float[noEntriesPerVertex * noVerticesPerCol * noVerticesPerRow];
         final float inColumnStepSize = 2f / (noVerticesPerCol - 1);
@@ -321,14 +308,14 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
 
         for (int i = 0; i < noVerticesPerCol; ++i) {
             for (int j = 0; j < noVerticesPerRow; ++j) {
-                // x, tx
+                // x
                 glVertices[(i * noVerticesPerRow + j) * noEntriesPerVertex + 0] = (-1) + j * inRowStepSize;
                 // y
                 glVertices[(i * noVerticesPerRow + j) * noEntriesPerVertex + 1] = (-1) + i * inColumnStepSize;
                 // tx
-                glVertices[(i * noVerticesPerRow + j) * noEntriesPerVertex + 2] = (-1) + j * inRowStepSize;
+                glVertices[(i * noVerticesPerRow + j) * noEntriesPerVertex + 2] = 1-i * inColumnStepSize / 2;
                 // ty
-                glVertices[(i * noVerticesPerRow + j) * noEntriesPerVertex + 3] = (-1) + i * inColumnStepSize;
+                glVertices[(i * noVerticesPerRow + j) * noEntriesPerVertex + 3] = 1-j * inRowStepSize /2;
             }
         }
 
@@ -392,6 +379,15 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
         };
         r.run();
 
+
+        setEGLContextClientVersion(3);
+
+        renderer = new MyRenderer(glVertices, Utility.generateDrawOrder(noVerticesPerRow, noVerticesPerCol));
+        setRenderer(renderer);
+        setRenderMode(GLSurfaceView.RENDERMODE_CONTINUOUSLY);
+
+        // possible race condition?
+        setWillNotDraw(false);
     }
 
     // Update these in onTouchEvent, then asynchronously update the point locations
