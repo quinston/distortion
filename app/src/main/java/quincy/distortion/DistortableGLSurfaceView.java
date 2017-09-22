@@ -274,6 +274,12 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
             else {
                 GLES30.glUniform1f(opacityHandle, 1f);
             }
+
+            float[] transformMatrix = new float[16];
+            st.getTransformMatrix(transformMatrix);
+
+            int transformMatrixHandle = GLES30.glGetUniformLocation(program, "textureTransformMatrix");
+            GLES30.glUniformMatrix4fv(transformMatrixHandle, 1, false, transformMatrix, 0);
             /******************************************/
 
             GLES30.glDrawElements(GLES30.GL_TRIANGLES, drawOrder.length, GLES30.GL_UNSIGNED_SHORT, 0);
@@ -307,9 +313,9 @@ public class DistortableGLSurfaceView extends GLSurfaceView {
                 // y
                 glVertices[(i * noVerticesPerRow + j) * noEntriesPerVertex + 1] = (-1) + i * inColumnStepSize;
                 // tx
-                glVertices[(i * noVerticesPerRow + j) * noEntriesPerVertex + 2] = 1-i * inColumnStepSize / 2;
+                glVertices[(i * noVerticesPerRow + j) * noEntriesPerVertex + 2] = j * inRowStepSize /2;
                 // ty
-                glVertices[(i * noVerticesPerRow + j) * noEntriesPerVertex + 3] = 1-j * inRowStepSize /2;
+                glVertices[(i * noVerticesPerRow + j) * noEntriesPerVertex + 3] = i * inColumnStepSize / 2;
             }
         }
 
